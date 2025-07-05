@@ -11,6 +11,13 @@ serde = { version="1.0.192", default-features = false, features = ["derive"] }
 serde-json-core = { git = "https://github.com/rust-embedded-community/serde-json-core" }
 hex = { version = "0.4.3", default-features = false, features = ["serde", "alloc"] }
 numtoa = "0.2.4"
+# risc0-groth16 = { version = "2.0.1", default-features = false }
+# serde_json = { version = "1.0", default-features = false, features = ["alloc"] }
+ark-bn254 = "0.5.0"
+ark-ff = "0.5.0"
+ark-ec = "0.5.0"
+ark-groth16 = { version = "0.5.0", default-features = false }
+once_cell = { version = "1.21.3", default-features = false }
 
 [profile.release]
 opt-level = 'z'

@@ -23,11 +23,13 @@ mod app_ui {
     pub mod address;
     pub mod menu;
     pub mod sign;
+    pub mod pairing_test;
 }
 mod handlers {
     pub mod get_public_key;
     pub mod get_version;
     pub mod sign_tx;
+    pub mod pairing_test;
 }
 
 mod settings;
@@ -37,10 +39,32 @@ use handlers::{
     get_public_key::handler_get_public_key,
     get_version::handler_get_version,
     sign_tx::{handler_sign_tx, TxContext},
+    pairing_test::handler_pairing_test,
 };
 use ledger_device_sdk::io::{ApduHeader, Comm, Reply, StatusWords};
 
-ledger_device_sdk::set_panic!(ledger_device_sdk::exiting_panic);
+// ledger_device_sdk::set_panic!(ledger_device_sdk::exiting_panic);
+
+pub fn debug_print(s: &str) {
+    let p = s.as_bytes().as_ptr();
+    for i in 0..s.len() {
+        let m = unsafe { p.add(i) };
+        unsafe {
+            core::arch::asm!(
+                "svc #0xab",
+                in("r1") m,
+                inout("r0") 3 => _,
+            );
+        }
+    }
+}
+
+#[panic_handler]
+pub fn test_panic(info: &core::panic::PanicInfo) -> ! {
+    let loc = info.location().unwrap();
+    debug_print(&alloc::format!("Panic! {}:{}\n{}\n", loc.file(), loc.line(), info.message()));
+    ledger_device_sdk::exiting_panic(info)
+}
 
 // Required for using String, Vec, format!...
 extern crate alloc;
@@ -88,6 +112,7 @@ pub enum Instruction {
     GetAppName,
     GetPubkey { display: bool },
     SignTx { chunk: u8, more: bool },
+    PairingTest,
 }
 
 impl TryFrom<ApduHeader> for Instruction {
@@ -118,7 +143,8 @@ impl TryFrom<ApduHeader> for Instruction {
                     more: value.p2 == P2_SIGN_TX_MORE,
                 })
             }
-            (3..=6, _, _) => Err(AppSW::WrongP1P2),
+            (7, 0, 0) => Ok(Instruction::PairingTest),
+            (3..=7, _, _) => Err(AppSW::WrongP1P2),
             (_, _, _) => Err(AppSW::InsNotSupported),
         }
     }
@@ -187,5 +213,6 @@ fn handle_apdu(comm: &mut Comm, ins: &Instruction, ctx: &mut TxContext) -> Resul
         Instruction::GetVersion => handler_get_version(comm),
         Instruction::GetPubkey { display } => handler_get_public_key(comm, *display),
         Instruction::SignTx { chunk, more } => handler_sign_tx(comm, *chunk, *more, ctx),
+        Instruction::PairingTest => handler_pairing_test(comm),
     }
 }

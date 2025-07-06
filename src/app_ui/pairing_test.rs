@@ -25,6 +25,7 @@ use alloc::string::String;
 
 use ark_groth16::Groth16;
 use ark_bn254::Bn254;
+use ark_ec::pairing::Pairing;
 
 pub mod proof;
 pub mod public;
@@ -33,14 +34,14 @@ pub mod vk;
 fn verify() {
     let vk = vk::vk();
 
-    // let foo = Bn254::pairing(vk.alpha_g1.into(), vk.gamma_abc_g1[0].into);
+    let foo = Bn254::pairing(vk.alpha_g1, vk.beta_g2);
 
-    // debug_print(&format!("floop: {}", vk.gamma_abc_g1.len()));
+    // debug_print(&format!("floop: {}", foo));
 
-    let proof = proof::proof();
-    let public = public::public();
+    // let proof = proof::proof();
+    // let public = public::public();
 
-    Groth16::<Bn254>::verify_proof(&vk, &proof, &public).unwrap();
+    // Groth16::<Bn254>::verify_proof(&vk, &proof, &public).unwrap();
 }
 
 pub fn ui_display_pairing_test(data: Vec<u8>) -> Result<(), AppSW> {
